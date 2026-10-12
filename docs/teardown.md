@@ -4,6 +4,8 @@
 |---|---|---|
 | ![front](photos/controller-with-battery.jpg) | ![back](photos/controller-back.jpg) | ![battery box](photos/battery-box.jpg) |
 
+The kit has **two identical boxes** (one per side of the table), each with this board, two single-colour strips and a button.
+
 Board silkscreen: `XL251212B`, `32*13.2*1.0` (32 × 13.2 mm, 1.0 mm thick PCB).
 
 ## Parts
@@ -49,6 +51,5 @@ Continuity / diode mode:
 1. **Which connector is the button?** Its pin goes to a U1 pin through the 1 k resistor. The LED connectors go to VCC and the MOSFET drain (the single pin on the top of the SOT-23).
 2. **Are the strips in parallel?** Check that J1− and J2− both beep to Q1's drain.
 3. **Strip LEDs:** probe a strip's connector with the meter in diode mode, red lead on + and black on −. If it lights faintly, it's a plain 2-wire LED string.
-4. **Watch the stock modes:** do the LEDs change colour by themselves (built-in colour-cycling LEDs), or are they a single colour? This matters for PWM dimming (see `pico-build.md`).
 
 Also useful, with batteries in: measure the current in strip-on mode (meter in series with the battery's red wire). It tells us the LED load and expected battery life.

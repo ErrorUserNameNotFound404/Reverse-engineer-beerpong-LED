@@ -1,17 +1,20 @@
 # Beer pong LED controller for Raspberry Pi Pico (MicroPython).
 #
-# Two LED strips switched by logic-level N-MOSFETs on STRIP_PINS,
-# one push button to GND on BUTTON_PIN. See docs/pico-build.md for wiring.
+# One Pico drives both sides of the table. Each side has two single-colour
+# LED strips (switched by logic-level N-MOSFETs) and one push button to GND.
+# A side's button only controls that side's strips. See docs/pico-build.md.
 
 import math
 import time
 from machine import Pin, PWM
 
-STRIP_PINS = (15, 14)   # GP15 = strip A, GP14 = strip B
-BUTTON_PIN = 16
+# (name, (strip 1 pin, strip 2 pin), button pin)
+SIDES = (
+    ("side 1", (15, 14), 16),   # local box (Pico lives here)
+    ("side 2", (13, 12), 17),   # remote box, via the cable across the table
+)
 PWM_FREQ = 1000
 MAX_BRIGHTNESS = 1.0    # lower this to save battery / limit LED current
-SMOOTH_PWM = True       # False for self colour-cycling LEDs (on/off only)
 CELEBRATE_MS = 3000
 
 
@@ -23,8 +26,6 @@ class Strip:
 
     def set(self, level):
         level = min(max(level, 0.0), 1.0)
-        if not SMOOTH_PWM:
-            level = 1.0 if level >= 0.5 else 0.0
         # Square for a rough perceptual (gamma) curve.
         self.pwm.duty_u16(int(level * level * MAX_BRIGHTNESS * 65535))
 
@@ -70,7 +71,7 @@ class Button:
         return None
 
 
-# Patterns: t = ms since the mode started -> (strip A level, strip B level).
+# Patterns: t = ms since the mode started -> (strip 1 level, strip 2 level).
 
 def wave(t, period):
     return (1 - math.cos(2 * math.pi * (t % period) / period)) / 2
@@ -105,12 +106,8 @@ def heartbeat(t):
     return v, v
 
 
-def team_a(t):
-    return wave(t, 1500) * 0.7 + 0.3, 0
-
-
-def team_b(t):
-    return 0, wave(t, 1500) * 0.7 + 0.3
+def dim(t):
+    return 0.35, 0.35
 
 
 def celebrate(t):
@@ -119,42 +116,51 @@ def celebrate(t):
     return (1, 0) if phase == 0 else (0, 1) if phase == 2 else (0, 0)
 
 
-MODES = (solid, breathe, ping_pong, alternate, strobe, heartbeat, team_a, team_b)
+MODES = (solid, breathe, ping_pong, alternate, strobe, heartbeat, dim)
+
+
+class Side:
+    def __init__(self, name, strip_pins, button_pin):
+        self.name = name
+        self.strips = [Strip(p) for p in strip_pins]
+        self.button = Button(button_pin)
+        self.mode = 0
+        self.on = True
+        self.start = time.ticks_ms()
+        self.celebrate_start = None
+
+    def update(self, now):
+        event = self.button.poll(now)
+        if event == "long":
+            self.on = not self.on
+            self.start = now
+            self.celebrate_start = None
+        elif self.on and event == "click":
+            self.mode = (self.mode + 1) % len(MODES)
+            self.start = now
+        elif self.on and event == "double":
+            self.celebrate_start = now
+
+        if not self.on:
+            levels = (0, 0)
+        elif self.celebrate_start is not None \
+                and time.ticks_diff(now, self.celebrate_start) < CELEBRATE_MS:
+            levels = celebrate(time.ticks_diff(now, self.celebrate_start))
+        else:
+            self.celebrate_start = None
+            levels = MODES[self.mode](time.ticks_diff(now, self.start))
+
+        for strip, level in zip(self.strips, levels):
+            strip.set(level)
 
 
 def main():
-    strips = [Strip(p) for p in STRIP_PINS]
-    button = Button(BUTTON_PIN)
-    mode = 0
-    on = True
-    start = time.ticks_ms()
-    celebrate_start = None
-
+    sides = [Side(*cfg) for cfg in SIDES]
     while True:
         now = time.ticks_ms()
-        event = button.poll(now)
-        if event == "long":
-            on = not on
-            start = now
-            celebrate_start = None
-        elif on and event == "click":
-            mode = (mode + 1) % len(MODES)
-            start = now
-        elif on and event == "double":
-            celebrate_start = now
-
-        if not on:
-            levels = (0, 0)
-        elif celebrate_start is not None \
-                and time.ticks_diff(now, celebrate_start) < CELEBRATE_MS:
-            levels = celebrate(time.ticks_diff(now, celebrate_start))
-        else:
-            celebrate_start = None
-            levels = MODES[mode](time.ticks_diff(now, start))
-
-        for strip, level in zip(strips, levels):
-            strip.set(level)
-        time.sleep_ms(10 if on else 25)
+        for side in sides:
+            side.update(now)
+        time.sleep_ms(10)
 
 
 main()

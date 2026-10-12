@@ -1,6 +1,6 @@
 # Beer pong LED: reverse engineering and Pico upgrade
 
-A stock beer pong light kit (3×AA box, tiny controller board, two LED strips and a button), taken apart and rebuilt around a Raspberry Pi Pico.
+A stock beer pong light kit, taken apart and rebuilt around a Raspberry Pi Pico. The kit is two identical boxes, one per end of the table. Each box has 3×AA, a tiny controller board, two single-colour LED strips and a button.
 
 ![controller](docs/photos/controller-with-battery.jpg)
 
@@ -17,6 +17,7 @@ Full details, the inferred schematic and multimeter checks are in [`docs/teardow
 
 [`docs/pico-build.md`](docs/pico-build.md) covers the parts list, wiring and controls. [`firmware/main.py`](firmware/main.py) is the MicroPython firmware:
 
-- Independent PWM on each strip (two MOSFETs instead of one)
-- 8 modes: solid, breathe, ping-pong, alternate, strobe, heartbeat, team A, team B
+- One Pico drives all four strips independently with PWM (one MOSFET per strip)
+- Each side's button controls only that side's two strips
+- 7 modes: solid, breathe, ping-pong, alternate, strobe, heartbeat, dim
 - Click = next mode, double-click = "cup made!" celebration, hold = on/off
