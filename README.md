@@ -15,7 +15,7 @@ Full details, the inferred schematic and multimeter checks are in [`docs/teardow
 
 ## The upgrade
 
-[`docs/pico-build.md`](docs/pico-build.md) covers the parts list, wiring and controls. [`firmware/main.py`](firmware/main.py) is the MicroPython firmware:
+[`docs/pico-build.md`](docs/pico-build.md) covers the wiring and controls, and [`docs/parts-list.md`](docs/parts-list.md) has a single-vendor parts list with cost estimates (≈ $40–52 total). [`firmware/main.py`](firmware/main.py) is the MicroPython firmware:
 
 - One Pico drives all four strips independently with PWM (one MOSFET per strip)
 - Each side's button controls only that side's two strips

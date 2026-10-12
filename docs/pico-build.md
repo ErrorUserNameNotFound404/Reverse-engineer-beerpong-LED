@@ -24,6 +24,8 @@ The side 2 MOSFETs sit **in the side 2 box**, so only 3.3 V logic signals cross 
 
 ## Parts
 
+For exact part numbers, a single-vendor order and costs, see [`parts-list.md`](parts-list.md).
+
 | Qty | Part | Notes |
 |---|---|---|
 | 1 | Raspberry Pi Pico (or Pico W) | Runs on VSYS from 1.8–5.5 V, so 3×AA (3.3–4.8 V) is fine directly |
